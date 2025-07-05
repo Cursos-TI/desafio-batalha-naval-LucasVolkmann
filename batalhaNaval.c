@@ -4,16 +4,35 @@
 #define SHIP_INDICATOR '#'
 #define BOARD_TYPE char
 
-int isInvalidCoordinates(const int initialCoordinates[], const int shipLength, char shipName[]) {
+#define SHIP_TYPE_VERTICAL 1
+#define SHIP_TYPE_HORIZONTAL 2
+#define SHIP_TYPE_DIAGONAL_ASC 3
+#define SHIP_TYPE_DIAGONAL_DESC 4
 
+int isInvalidCoordinates(const int initialCoordinates[], const int shipLength, int shipType, char shipName[]) {
+    const int y = initialCoordinates[1];
     const int x = initialCoordinates[0];
-    if (x < 0 || x > 9 || (x + shipLength - 1) > 9) {
-        printf("Coordenada x do %s é inválida!\n", shipName);
+
+    if (x < 0 || x > 9 || y < 0 || y > 9) {
+        printf("Coordenadas iniciais inválidas para o navio %s! \n", shipName);
         return 1;
     }
-    const int y = initialCoordinates[1];
-    if (y < 0 || y > 9 || (y + shipLength - 1) > 9) {
-        printf("Coordenada y do %s é inválida!\n", shipName);
+    if (
+        shipType == SHIP_TYPE_VERTICAL ||
+        shipType == SHIP_TYPE_HORIZONTAL ||
+        shipType == SHIP_TYPE_DIAGONAL_DESC
+    ) {
+        if ((x + shipLength - 1) > 9 || (y + shipLength - 1) > 9) {
+            printf("Coordenadas do %s são inválidas!\n", shipName);
+            return 1;
+        }
+    } else if (shipType == SHIP_TYPE_DIAGONAL_ASC) {
+        if ((x - (shipLength - 1)) < 0 || (y + shipLength - 1) > 9) {
+            printf("Coordenadas do %s são inválidas!\n", shipName);
+            return 1;
+        }
+    } else {
+        printf("Invalid ship type \n");
         return 1;
     }
 
@@ -21,63 +40,94 @@ int isInvalidCoordinates(const int initialCoordinates[], const int shipLength, c
 }
 
 int isOverlap(const int boardValue) {
-    return boardValue == 3;
+    return boardValue != WATER_INDICATOR;
 }
 
-int placeShip(BOARD_TYPE board[10][10], int initialCoordinates[2], int shipLength, unsigned short isVertical) {
+int placeShip(
+    BOARD_TYPE board[10][10],
+    int initialCoordinates[2],
+    const int shipLength,
+    const unsigned short shipType
+) {
     int i = 0;
     while (i++ < shipLength) {
+
         if (isOverlap(board[initialCoordinates[0]][initialCoordinates[1]])) {
             printf("Os navios se sobrepuseram! \n");
             return 1;
         };
+
         board[initialCoordinates[0]][initialCoordinates[1]] = SHIP_INDICATOR;
-        if (isVertical) initialCoordinates[1]++;
-        else initialCoordinates[0]++;
+        switch (shipType) {
+            case SHIP_TYPE_VERTICAL:
+                initialCoordinates[1]++;
+                break;
+            case SHIP_TYPE_HORIZONTAL:
+                initialCoordinates[0]++;
+                break;
+            case SHIP_TYPE_DIAGONAL_DESC:
+                initialCoordinates[0]++;
+                initialCoordinates[1]++;
+                break;
+            case SHIP_TYPE_DIAGONAL_ASC:
+                initialCoordinates[0]--;
+                initialCoordinates[1]++;
+                break;
+            default:
+                printf("Erro enquanto estava adicionando o navio no tabuleiro: Tipo do navio inválido.\n");
+                return 1;
+        }
     };
     return 0;
 }
 
 int main() {
-    // Nível Novato - Posicionamento dos Navios
-    // Sugestão: Declare uma matriz bidimensional para representar o tabuleiro (Ex: int tabuleiro[5][5];).
-    // Sugestão: Posicione dois navios no tabuleiro, um verticalmente e outro horizontalmente.
-    // Sugestão: Utilize `printf` para exibir as coordenadas de cada parte dos navios.
+    // Nível Aventureiro - Expansão do Tabuleiro e Posicionamento Diagonal
+    // Sugestão: Expanda o tabuleiro para uma matriz 10x10.
+    // Sugestão: Posicione quatro navios no tabuleiro, incluindo dois na diagonal.
+    // Sugestão: Exiba o tabuleiro completo no console, mostrando 0 para posições vazias e 3 para posições ocupadas.
 
     // ##### Declaração e inicialização da matriz do tabuleiro
     BOARD_TYPE board[10][10];
     int i = 100;
     while (i--) board[i / 10][i % 10] = WATER_INDICATOR;
 
-
     const int vShipLength = 3;
-    int initCoordVShip[2] = { 0, 0 };
+    int initCoordVShip[2] = {0, 0};
+
     const int hShipLength = 2;
-    int initCoordHShip[2] = { 4, 7 };
+    int initCoordHShip[2] = {3, 5};
+
+    const int d1ShipLength = 4;
+    int initCoordD1Ship[2] = {3, 2};
+
+    const int d2ShipLength = 2;
+    int initCoordD2Ship[2] = {2, 7};
 
 
-    if (isInvalidCoordinates(initCoordVShip, vShipLength, "Navio vertical")) return 1;
-    if (isInvalidCoordinates(initCoordHShip, hShipLength, "Navio horizontal")) return 1;
+    if (isInvalidCoordinates(initCoordVShip, vShipLength, SHIP_TYPE_VERTICAL, "vertical")) return 1;
+    if (isInvalidCoordinates(initCoordHShip, hShipLength, SHIP_TYPE_HORIZONTAL, "horizontal")) return 1;
+    if (isInvalidCoordinates(initCoordD1Ship, d1ShipLength, SHIP_TYPE_DIAGONAL_ASC, "diagonal 1")) return 1;
+    if (isInvalidCoordinates(initCoordD2Ship, d2ShipLength, SHIP_TYPE_DIAGONAL_DESC, "diagonal 2")) return 1;
 
 
     // ##### Definindo os navios na matriz do tabuleiro
-    const int placeErrorVShip = placeShip(board, initCoordVShip, vShipLength, 1);
-    const int placeErrorHShip = placeShip(board, initCoordHShip, hShipLength, 0);
+    const int placeErrorVShip = placeShip(board, initCoordVShip, vShipLength, SHIP_TYPE_VERTICAL);
+    const int placeErrorHShip = placeShip(board, initCoordHShip, hShipLength, SHIP_TYPE_HORIZONTAL);
+    const int placeErrorD1Ship = placeShip(board, initCoordD1Ship, d1ShipLength, SHIP_TYPE_DIAGONAL_ASC);
+    const int placeErrorD2Ship = placeShip(board, initCoordD2Ship, d2ShipLength, SHIP_TYPE_DIAGONAL_DESC);
 
-    if (placeErrorVShip || placeErrorHShip) return 1;
+    if (placeErrorVShip || placeErrorHShip || placeErrorD1Ship || placeErrorD2Ship) return 1;
 
     // ##### Exibindo a matriz do tabuleiro
-    for (i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
-            printf("%c ", board[j][i]);
+    printf("+ x 0 1 2 3 4 5 6 7 8 9\ny\n");
+    for (int y = 0; y < 10; y++) {
+        printf("%d   ", y);
+        for (int x = 0; x < 10; x++) {
+            printf("%c ", board[x][y]);
         }
         printf("\n");
     }
-
-    // Nível Aventureiro - Expansão do Tabuleiro e Posicionamento Diagonal
-    // Sugestão: Expanda o tabuleiro para uma matriz 10x10.
-    // Sugestão: Posicione quatro navios no tabuleiro, incluindo dois na diagonal.
-    // Sugestão: Exiba o tabuleiro completo no console, mostrando 0 para posições vazias e 3 para posições ocupadas.
 
     // Nível Mestre - Habilidades Especiais com Matrizes
     // Sugestão: Crie matrizes para representar habilidades especiais como cone, cruz, e octaedro.
@@ -89,7 +139,7 @@ int main() {
     // 0 0 1 0 0
     // 0 1 1 1 0
     // 1 1 1 1 1
-    
+
     // Exemplo para habilidade em octaedro:
     // 0 0 1 0 0
     // 0 1 1 1 0
